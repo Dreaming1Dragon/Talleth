@@ -21,13 +21,11 @@ mouseCaptured:bool
 mousePos:[2]f32
 
 CaptureCursor::proc(){
-	// rl.DisableCursor()
 	glfw.SetInputMode(window,glfw.CURSOR,glfw.CURSOR_DISABLED)
 	mouseCaptured=true
 }
 
 ReleaseCursor::proc(){
-	// rl.EnableCursor()
 	glfw.SetInputMode(window,glfw.CURSOR,glfw.CURSOR_NORMAL)
 	mouseCaptured=false
 }
@@ -38,13 +36,6 @@ GetKey::proc($KEY)->u32{
 
 inputInit::proc(keys:[]KeyBind){
 	input.keys=keys
-	// input.keys[.fwd]={hold=true,code=glfw.KEY_W}
-	// input.keys[.back]={hold=true,code=glfw.KEY_S}
-	// input.keys[.right]={hold=true,code=glfw.KEY_D}
-	// input.keys[.left]={hold=true,code=glfw.KEY_A}
-	// input.keys[.jump]={hold=true,code=glfw.KEY_SPACE}
-	// input.keys[.crouch]={hold=true,code=glfw.KEY_LEFT_SHIFT}
-	// input.keys[.pause]={hold=false,code=glfw.KEY_ESCAPE}
 }
 
 key_callback::proc"c"(window:glfw.WindowHandle,key,scancode,action,mods:i32){
@@ -79,18 +70,5 @@ inputUpdate::proc(){
 	if mouseCaptured{
 		input.mouse={0,0}
 	}
-	// for i in controls{
-	// 	if(input.keys[i].hold){
-	// 		input.keys[i].set=rl.IsKeyDown(input.keys[i].code)
-	// 	}else{
-	// 		input.keys[i].set=rl.IsKeyPressed(input.keys[i].code)
-	// 	}
-	// }
-	// input.mouse=mouseCaptured?rl.GetMouseDelta():rl.GetMousePosition()
-	// input.mouse=rl.GetMouseDelta()
 }
-
-// inputDestroy::proc(){
-	
-// }
 

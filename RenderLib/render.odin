@@ -152,6 +152,5 @@ size_callback::proc"c"(window:glfw.WindowHandle,width,height:i32){
     // context = runtime.default_context()
 	gl.Viewport(0,0,width,height)
 	resolution={f32(width),f32(height)}
-	// gl.Uniform2fv(Loc.resolution,1,raw_data(resolution[:]))
 }
 

@@ -1,8 +1,5 @@
 package main
 
-// GRAPHICS_API_OPENGL_43::1
-// #define GRAPHICS_API_OPENGL_43
-
 import rl "RenderLib"
 
 import "core:fmt"
@@ -45,21 +42,8 @@ renderInit::proc(width,height:i32,name:cstring)->(ok:bool=true){
 			}
 		}
 	}
-	// gl.CreateBuffers(1,&buffer)
-	// gl.NamedBufferStorage(buffer,size_of(shader_data),&shader_data,gl.DYNAMIC_STORAGE_BIT)
-	//                     sizeof(glm::mat4) * instancedModelMatrices.size(), 
-	//                     (const void *)instancedModelMatrices.data(), 
-	//                     GL_DYNAMIC_STORAGE_BIT);
 	buffer=rl.LoadShaderBuffer(size_of(shader_data),&shader_data)//rl.RL_DYNAMIC_COPY)
 	rl.BindShaderBuffer(buffer,0)
-	// {
-	// 	gl.GenBuffers(1, &buffer);
-	// 	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER, buffer);
-	// 	gl.BufferData(gl.SHADER_STORAGE_BUFFER, size_of(shader_data), &shader_data, rl.RL_STREAM_COPY);
-	// 	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER, 0);
-	// }
-	// fmt.println("buffer: ",buffer)
-	// fmt.println("version: ",rl.rlGetVersion())
 
 	Loc=rl.GetUniforms(shader,([LocNames]cstring)({
 		.pos="pos",
@@ -69,22 +53,11 @@ renderInit::proc(width,height:i32,name:cstring)->(ok:bool=true){
 		.runTime="runTime",
 		.resolution="resolution",
 	}))
-	// Loc.pos=gl.GetUniformLocation(shader,"pos")
-	// Loc.fwd=gl.GetUniformLocation(shader,"fwd")
-	// Loc.right=gl.GetUniformLocation(shader,"right")
-	// Loc.fov=gl.GetUniformLocation(shader,"fov")
-	// Loc.runTime=gl.GetUniformLocation(shader,"runTime")
-	// bufferLoc:=u32(gl.GetUniformLocation(shader,"shader_data"))
 	rl.SetUniform(Loc[.resolution],rl.resolution)
-
-	// rl.rlBindShaderBuffer(buffer,bufferLoc)
-	// rl.SetShaderValue(shader,Loc.resolution,&resolution,.VEC2)
 	return
 }
 
 renderUpdate::proc(){
-	// deltaTime:=rl.GetFrameTime()
-	// runTime+=deltaTime
 	rl.BeginDrawing()
 		runTime=rl.runTime
 
@@ -99,18 +72,6 @@ renderUpdate::proc(){
 		runningScreen()
 		
 		rl.ScreenShader(shader)
-		
-		// rl.BeginDrawing()
-		// 	rl.ClearBackground(rl.GRAY)
-			
-		// 	rl.BeginShaderMode(shader)
-		// 		rl.rlBindShaderBuffer(buffer,0)
-		// 		rl.DrawRectangle(0,0,rl.GetScreenWidth(),rl.GetScreenHeight(),rl.WHITE)
-		// 	rl.EndShaderMode()
-
-		// 	str:=fmt.ctprintf("Raymarching shader - %f",deltaTime)
-		// 	rl.DrawText(str,rl.GetScreenWidth()-280,rl.GetScreenHeight()-20,10,rl.BLACK)
-		// rl.EndDrawing()
 	rl.EndDrawing()
 	free_all(context.temp_allocator)
 	quit|=rl.quit

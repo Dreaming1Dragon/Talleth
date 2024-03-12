@@ -35,9 +35,7 @@ main::proc(){
 	if !renderInit(800,450,"game"){
 		return
 	}
-	// inputInit()
 	gameInit()
-	// fmt.println("quit: ",quit)
 	for(!quit){
 		renderUpdate()
 	}

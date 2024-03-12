@@ -11,7 +11,6 @@ Camera::struct{
 	fwd:[3]f32,
 	right:[3]f32,
 	up:[3]f32,
-	// look:[3][3]f32,
 	fov:f32
 }
 
@@ -20,11 +19,6 @@ Camera_Default::Camera{
 	fwd={0,0,1},
 	right={1,0,0},
 	up={0,1,0},
-	// look={
-	// 	{1,0,0},
-	// 	{0,1,0},
-	// 	{0,0,1},
-	// },
 	fov=1
 }
 
@@ -48,6 +42,5 @@ CameraUpdate::proc(Cam:^Camera){
 	Cam.right=la.normalize(la.cross(Cam.up,Cam.fwd))
 	// angle:=la.angle_between(Cam.fwd,Cam.up)
 	Cam.fwd=la.matrix3_rotate(-rl.input.mouse.y/500,Cam.right)*Cam.fwd
-	// Cam.fwd=rot2*rot1*Cam.fwd
 }
 
