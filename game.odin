@@ -24,7 +24,7 @@ Keys:[]rl.KeyBind={
 }
 
 gameInit::proc(){
-	Cam.pos={0,0,-5}
+	Cam.pos={8,8,8-5}
 	rl.CaptureCursor()
 	rl.inputInit(Keys)
 }

@@ -12,8 +12,21 @@ uniform float fov;
 uniform float runTime;
 uniform vec2 resolution;
 
-layout (std430, binding=0) buffer shader_data{
-	float[16*16*16] blocks;
+uint chunkID=0;
+
+const uint ChunkSize=16;
+
+layout (std430, binding=0) buffer voxelData{
+	float[][ChunkSize*ChunkSize*ChunkSize] voxels;
+};
+
+struct chunk{
+	uint[6] neighbors;
+	uint vox;
+};
+
+layout (std430, binding=1) buffer chunkData{
+	chunk[2] chunks;
 };
 
 struct Voxels{
@@ -27,12 +40,14 @@ ivec3[8] Corners={
 	{0,1,1},{1,1,1},
 };
 
-float sphere(vec3 pos,float radius,vec3 ray){
-	return length(pos-ray)-radius;
-}
+ivec3[6] Neighbors={
+	{1,0,0},{-1,0,0},
+	{0,1,0},{0,-1,0},
+	{0,0,1},{0,0,-1},
+};
 
 float getVoxel(ivec3 pos){
-	return blocks[pos.x+pos.y*16+pos.z*16*16];
+	return voxels[chunks[chunkID].vox][pos.x+pos.y*ChunkSize+pos.z*ChunkSize*ChunkSize];
 }
 
 struct Voxels getVoxels(ivec3 pos){
@@ -51,7 +66,7 @@ float getSmallest(struct Voxels voxs){
 	return s;
 }
 
-float interpoate(struct Voxels voxs,vec3 pos){
+float interpolate(struct Voxels voxs,vec3 pos){
 	pos-=floor(pos);
 	float a1=mix(voxs.vox[0],voxs.vox[1],pos.x);
 	float a2=mix(voxs.vox[2],voxs.vox[3],pos.x);
@@ -63,15 +78,13 @@ float interpoate(struct Voxels voxs,vec3 pos){
 }
 
 float world(vec3 ray){
-	ivec3 pos=ivec3(floor(ray))+8;
+	ivec3 pos=ivec3(floor(ray));
 	struct Voxels voxs=getVoxels(pos);
 	float s=getSmallest(voxs);
-	if(s<2){
-		s=interpoate(voxs,ray);
+	if(s<0.1){
+		s=interpolate(voxs,ray);
 	}
 	return s;
-	// return length(pos)/16;
-	// return sphere(vec3(0),2,ray);
 }
 
 void main(){
@@ -81,17 +94,44 @@ void main(){
 	vec3 rd=normalize(p.x*right+p.y*up+fov*fwd);
 
 	float dst=0;
+	vec3 ray=pos;
 	for(int i=0;i<100;i++){
-		vec3 ray=pos+rd*dst;
+		if(ray.x>=ChunkSize){
+			chunkID=chunks[chunkID].neighbors[0];
+			ray.x-=ChunkSize;
+			if(chunkID==-1)break;
+		}else if(ray.x<0){
+			chunkID=chunks[chunkID].neighbors[1];
+			ray.x+=ChunkSize;
+			if(chunkID==-1)break;
+		}if(ray.y>=ChunkSize){
+			chunkID=chunks[chunkID].neighbors[2];
+			ray.y-=ChunkSize;
+			if(chunkID==-1)break;
+		}else if(ray.y<0){
+			chunkID=chunks[chunkID].neighbors[3];
+			ray.y+=ChunkSize;
+			if(chunkID==-1)break;
+		}if(ray.z>=ChunkSize){
+			chunkID=chunks[chunkID].neighbors[4];
+			ray.z-=ChunkSize;
+			if(chunkID==-1)break;
+		}else if(ray.z<0){
+			chunkID=chunks[chunkID].neighbors[5];
+			ray.z+=ChunkSize;
+			if(chunkID==-1)break;
+		}
 		float geom=world(ray);
 		dst+=geom;
+		ray+=rd*geom;
 		if(geom<0.01)
 			break;
 	}
 	vec3 col = vec3(dst/50);
-
-	// gamma
-	// col = pow( col, vec3(0.4545) );
+	// if(p.x<0){
+	// 	col=vec3(chunks[chunkID].neighbors[0],chunks[chunkID].neighbors[1],chunks[chunkID].neighbors[2]);
+	// 	if(chunkID==-1)col=vec3(1,0,0);
+	// }
 
 	finalColor = vec4(col, 1.0 );
 }
