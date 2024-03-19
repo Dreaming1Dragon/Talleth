@@ -43,6 +43,7 @@ gameUpdate::proc(){
 		rl.ReleaseCursor()
 		runningScreen=menuUpdate
 	}
+	worldUpdate()
 	CameraUpdate(&Cam)
 	// fmt.println("pos: ",Cam.pos)
 }

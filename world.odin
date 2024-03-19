@@ -1,5 +1,6 @@
 package main
 
+import "core:fmt"
 import la "core:math/linalg"
 
 chunkType::struct{
@@ -10,16 +11,22 @@ voxelType::[ChunkSize*ChunkSize*ChunkSize]f32
 world:struct{
 	voxelData:[dynamic]voxelType,
 	chunkData:[dynamic]chunkType,
+	// chunks:[dynamic]struct{
+	// 	parent:u32,
+	// 	children:[8]u32,
+	// },
 }
-@(private="file")
+ChunkSize::16
+ChunkID:u32=0
 none:=transmute(u32)i32(-1)
 @(private="file")
-ChunkSize::16
+xSize:=8
+@(private="file")
+ySize:=2
+@(private="file")
+zSize:=8
 
 worldInit::proc(){
-	xSize:=4
-	ySize:=2
-	zSize:=4
 	for cx in 0..<xSize{
 		for cy in 0..<ySize{
 			for cz in 0..<zSize{
@@ -31,11 +38,7 @@ worldInit::proc(){
 							yy:=f32(cy*ChunkSize+y)
 							zz:=f32(cz*ChunkSize+z)
 							dst:=yy-(la.sin(xx/20)+la.sin(zz/10)+5)
-							// if(i==0){
-							// 	dst=la.length([3]f32{xx,yy,zz}-8)
-							// }
-							data[x+y*ChunkSize+z*ChunkSize*ChunkSize]=dst//-(2*f32(i+1))
-							// fmt.println(x,y,z,dst)
+							data[x+y*ChunkSize+z*ChunkSize*ChunkSize]=dst
 						}
 					}
 				}
@@ -66,6 +69,44 @@ worldInit::proc(){
 			}
 		}
 	}
+}
+
+worldUpdate::proc(){
+	for v,i in &world.voxelData{
+		cz:=i%zSize
+		cy:=(i/zSize)%ySize
+		cx:=(i/(zSize*ySize))%xSize
+		for x in 0..<ChunkSize{
+			for y in 0..<ChunkSize{
+				for z in 0..<ChunkSize{
+					xx:=f32(cx*ChunkSize+x)
+					yy:=f32(cy*ChunkSize+y)
+					zz:=f32(cz*ChunkSize+z)
+					dst:=yy-(la.sin(xx/20+runTime)+la.sin(zz/10)+5)
+					v[x+y*ChunkSize+z*ChunkSize*ChunkSize]=dst
+				}
+			}
+		}
+	}
+	
+	c:=world.chunkData[ChunkID]
+	world.chunkData[ChunkID]=world.chunkData[0]
+	for i in 0..<6{
+		n:=world.chunkData[ChunkID].neighbors[i]
+		if(n!=none && n!=ChunkID){
+			world.chunkData[n].neighbors[i+((i%2==0)?1:-1)]=ChunkID
+		}else if(n==ChunkID){
+			c.neighbors[i+((i%2==0)?1:-1)]=ChunkID
+		}
+	}
+	world.chunkData[0]=c
+	for i in 0..<6{
+		n:=world.chunkData[0].neighbors[i]
+		if(n!=none){
+			world.chunkData[n].neighbors[i+((i%2==0)?1:-1)]=0
+		}
+	}
+	ChunkID=0
 }
 
 worldDestroy::proc(){

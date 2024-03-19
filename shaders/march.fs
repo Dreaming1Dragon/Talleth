@@ -109,7 +109,7 @@ void main(){
 
 	float dst=0;
 	vec3 ray=pos;
-	for(int i=0;i<100;i++){
+	for(int i=0;i<1000;i++){
 		if(ray.x>=ChunkSize){
 			chunkID=chunks[chunkID].neighbors[0];
 			ray.x-=ChunkSize;

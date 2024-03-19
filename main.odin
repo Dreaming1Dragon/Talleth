@@ -40,6 +40,7 @@ main::proc(){
 	for(!quit){
 		renderUpdate()
 	}
+	worldDestroy()
 	renderDestroy()
 
 	// if(!reset_tracking_allocator(&temp_tracking_allocator)){fmt.println("No Temp Leaks!")}

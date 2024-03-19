@@ -103,6 +103,13 @@ LoadShaderBuffer::proc(size:int,data:rawptr,flags:u32=gl.STREAM_COPY)->(buffer:u
 	return
 }
 
+UpdateShaderBuffer::proc(size:int,data:rawptr,buffer:u32,flags:u32=gl.STREAM_COPY){
+	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER,buffer);
+	gl.BufferData(gl.SHADER_STORAGE_BUFFER,size,data,flags);
+	gl.BindBuffer(gl.SHADER_STORAGE_BUFFER,0);
+	return
+}
+
 BindShaderBuffer::proc(buffer:u32,index:u32){
 	gl.BindBufferBase(gl.SHADER_STORAGE_BUFFER,index,buffer)
 }

@@ -7,6 +7,7 @@ import la "core:math/linalg"
 
 quit:bool
 deltaTime:f32
+runTime:f32
 
 @(private="file")
 shader:u32
@@ -53,9 +54,13 @@ renderInit::proc(width,height:i32,name:cstring)->(ok:bool=true){
 }
 
 renderUpdate::proc(){
+	rl.UpdateShaderBuffer(size_of(voxelType)*len(world.voxelData),raw_data(world.voxelData[:]),voxels)
+	rl.BindShaderBuffer(voxels,0)
+	rl.UpdateShaderBuffer(size_of(chunkType)*len(world.chunkData),raw_data(world.chunkData[:]),chunks)
+	rl.BindShaderBuffer(chunks,1)
 	rl.BeginDrawing()
 		deltaTime=rl.deltaTime
-		runTime:=rl.runTime
+		runTime=rl.runTime
 
 		rl.SetUniform(Loc[.pos],Cam.pos)
 		rl.SetUniform(Loc[.fwd],Cam.fwd)
