@@ -24,18 +24,19 @@ Camera_Default::Camera{
 
 CameraUpdate::proc(Cam:^Camera){
 	fwd:=la.normalize(la.cross(Cam.right,Cam.up))
+	speed:=deltaTime*((rl.input.keys[controls.prone].set)?2:((rl.input.keys[controls.run].set)?20:14))
 	if(rl.input.keys[controls.fwd].set){
-		Cam.pos+=fwd
+		Cam.pos+=fwd*speed
 	}if(rl.input.keys[controls.back].set){
-		Cam.pos-=fwd
+		Cam.pos-=fwd*speed
 	}if(rl.input.keys[controls.right].set){
-		Cam.pos+=Cam.right
+		Cam.pos+=Cam.right*speed
 	}if(rl.input.keys[controls.left].set){
-		Cam.pos-=Cam.right
+		Cam.pos-=Cam.right*speed
 	}if(rl.input.keys[controls.jump].set){
-		Cam.pos+=Cam.up
+		Cam.pos+=Cam.up*speed
 	}if(rl.input.keys[controls.crouch].set){
-		Cam.pos-=Cam.up
+		Cam.pos-=Cam.up*speed
 	}
 	// fmt.println(rl.input.mouse)
 	Cam.fwd=la.matrix3_rotate(rl.input.mouse.x/500,Cam.up)*Cam.fwd

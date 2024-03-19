@@ -6,7 +6,7 @@ import "core:fmt"
 import la "core:math/linalg"
 
 quit:bool
-runTime:f32
+deltaTime:f32
 
 @(private="file")
 shader:u32
@@ -25,54 +25,19 @@ LocNames::enum{
 }
 @(private="file")
 Loc:[LocNames]i32
-@(private="file")
-voxelData:struct{
-	voxels:[2][16*16*16]f32
+
+last::proc(arr:[dynamic]$T)->^T{
+	return &arr[len(arr)-1]
 }
-@(private="file")
-chunkData:struct{
-	chunks:[2]struct{
-		neighbors:[6]u32,
-		vox:u32,
-	}
-}
-@(private="file")
-none:=transmute(u32)i32(-1)
 
 renderInit::proc(width,height:i32,name:cstring)->(ok:bool=true){
 	rl.InitWindow(width,height,name) or_return
 	defer if !ok{rl.DestroyWindow()}
 
 	shader=rl.LoadShader("../shaders/simple.vs","../shaders/march.fs") or_return
-	for i in 0..<2{
-		for x in 0..<16{
-			for y in 0..<16{
-				for z in 0..<16{
-					dst:=la.length([3]f32{f32(x),f32(y),f32(z)}-8)
-					voxelData.voxels[i][x+y*16+z*16*16]=dst-(2*f32(i+1))
-					// fmt.println(x,y,z,dst)
-				}
-			}
-		}
-	}
-	voxels=rl.LoadShaderBuffer(size_of(voxelData),&voxelData)
+	voxels=rl.LoadShaderBuffer(size_of(voxelType)*len(world.voxelData),raw_data(world.voxelData[:]))
 	rl.BindShaderBuffer(voxels,0)
-	chunkData={{{
-		neighbors={
-			1   ,none,
-			none,none,
-			none,none,
-		},
-		vox=0,
-	},{
-		neighbors={
-			none,0,
-			none,none,
-			none,none,
-		},
-		vox=1,
-	}}}
-	chunks=rl.LoadShaderBuffer(size_of(chunkData),&chunkData)
+	chunks=rl.LoadShaderBuffer(size_of(chunkType)*len(world.chunkData),raw_data(world.chunkData[:]))
 	rl.BindShaderBuffer(chunks,1)
 
 	Loc=rl.GetUniforms(shader,([LocNames]cstring)({
@@ -89,7 +54,8 @@ renderInit::proc(width,height:i32,name:cstring)->(ok:bool=true){
 
 renderUpdate::proc(){
 	rl.BeginDrawing()
-		runTime=rl.runTime
+		deltaTime=rl.deltaTime
+		runTime:=rl.runTime
 
 		rl.SetUniform(Loc[.pos],Cam.pos)
 		rl.SetUniform(Loc[.fwd],Cam.fwd)

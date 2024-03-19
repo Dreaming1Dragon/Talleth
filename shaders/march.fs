@@ -47,7 +47,21 @@ ivec3[6] Neighbors={
 };
 
 float getVoxel(ivec3 pos){
-	return voxels[chunks[chunkID].vox][pos.x+pos.y*ChunkSize+pos.z*ChunkSize*ChunkSize];
+	uint c=chunkID;
+	if(pos.x>=ChunkSize){
+		c=chunks[c].neighbors[0];
+		if(c==-1)return 0;
+		pos.x-=int(ChunkSize);
+	}if(pos.y>=ChunkSize){
+		c=chunks[c].neighbors[2];
+		if(c==-1)return 0;
+		pos.y-=int(ChunkSize);
+	}if(pos.z>=ChunkSize){
+		c=chunks[c].neighbors[4];
+		if(c==-1)return 0;
+		pos.z-=int(ChunkSize);
+	}
+	return voxels[chunks[c].vox][pos.x+pos.y*ChunkSize+pos.z*ChunkSize*ChunkSize];
 }
 
 struct Voxels getVoxels(ivec3 pos){

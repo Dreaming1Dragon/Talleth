@@ -32,6 +32,7 @@ main::proc(){
 
 	runningScreen=gameUpdate
 
+	worldInit()
 	if !renderInit(800,450,"game"){
 		return
 	}
