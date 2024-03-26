@@ -45,6 +45,7 @@ CameraUpdate::proc(Cam:^Camera){
 		}else{
 			ChunkID=c
 			Cam.pos.x-=ChunkSize
+			ChunkPos.x+=1
 		}
 	}else if(Cam.pos.x<0){
 		c:=world.chunkData[ChunkID].neighbors[1]
@@ -53,6 +54,7 @@ CameraUpdate::proc(Cam:^Camera){
 		}else{
 			ChunkID=c
 			Cam.pos.x+=ChunkSize
+			ChunkPos.x-=1
 		}
 	}
 	if(Cam.pos.y>ChunkSize-0.01){
@@ -62,6 +64,7 @@ CameraUpdate::proc(Cam:^Camera){
 		}else{
 			ChunkID=c
 			Cam.pos.y-=ChunkSize
+			ChunkPos.y+=1
 		}
 	}else if(Cam.pos.y<0){
 		c:=world.chunkData[ChunkID].neighbors[3]
@@ -70,6 +73,7 @@ CameraUpdate::proc(Cam:^Camera){
 		}else{
 			ChunkID=c
 			Cam.pos.y+=ChunkSize
+			ChunkPos.y-=1
 		}
 	}
 	if(Cam.pos.z>ChunkSize-0.01){
@@ -79,6 +83,7 @@ CameraUpdate::proc(Cam:^Camera){
 		}else{
 			ChunkID=c
 			Cam.pos.z-=ChunkSize
+			ChunkPos.z+=1
 		}
 	}else if(Cam.pos.z<0){
 		c:=world.chunkData[ChunkID].neighbors[5]
@@ -87,6 +92,7 @@ CameraUpdate::proc(Cam:^Camera){
 		}else{
 			ChunkID=c
 			Cam.pos.z+=ChunkSize
+			ChunkPos.z-=1
 		}
 	}
 	// fmt.println(rl.input.mouse)

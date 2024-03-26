@@ -23,6 +23,7 @@ layout (std430, binding=0) buffer voxelData{
 struct chunk{
 	uint[6] neighbors;
 	uint vox;
+	uint id;
 };
 
 layout (std430, binding=1) buffer chunkData{
@@ -109,7 +110,7 @@ void main(){
 
 	float dst=0;
 	vec3 ray=pos;
-	for(int i=0;i<1000;i++){
+	for(int i=0;i<500;i++){
 		if(ray.x>=ChunkSize){
 			chunkID=chunks[chunkID].neighbors[0];
 			ray.x-=ChunkSize;
@@ -141,7 +142,8 @@ void main(){
 		if(geom<0.01)
 			break;
 	}
-	vec3 col = vec3(dst/50);
+	vec3 col = vec3(0.5-(dst/200));
+	col+=vec3(float(chunks[chunkID].id)/1000)/(1-vec3(0.8,0.3,0.7));
 	// if(p.x<0){
 	// 	col=vec3(chunks[chunkID].neighbors[0],chunks[chunkID].neighbors[1],chunks[chunkID].neighbors[2]);
 	// 	if(chunkID==-1)col=vec3(1,0,0);
