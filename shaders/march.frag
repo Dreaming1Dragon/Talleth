@@ -1,16 +1,18 @@
 #version 430
 
-in vec2 fragTexCoord;
-in vec4 fragColor;
-out vec4 finalColor;
+layout(location = 0) in vec2 fragTexCoord;
+// in vec4 fragColor;
+layout(location = 0) out vec4 finalColor;
 
-uniform vec3 pos;
-uniform vec3 fwd;
-uniform vec3 right;
-// uniform vec3 up;
-uniform float fov;
-uniform float runTime;
-uniform vec2 resolution;
+layout(binding = 0) uniform UniformBufferObject {
+	vec3 pos;
+	vec3 fwd;
+	vec3 right;
+	// vec3 up;
+	float fov;
+	float runTime;
+	vec2 resolution;
+} ubo;
 
 uint chunkID=0;
 
@@ -65,15 +67,15 @@ float getVoxel(ivec3 pos){
 	return voxels[chunks[c].vox][pos.x+pos.y*ChunkSize+pos.z*ChunkSize*ChunkSize];
 }
 
-struct Voxels getVoxels(ivec3 pos){
-	struct Voxels voxs;
+Voxels getVoxels(ivec3 pos){
+	Voxels voxs;
 	for(int i=0;i<8;i++){
 		voxs.vox[i]=getVoxel(pos+Corners[i]);
 	}
 	return voxs;
 }
 
-float getSmallest(struct Voxels voxs){
+float getSmallest(Voxels voxs){
 	float s=1.0/0.0;
 	for(int i=0;i<8;i++){
 		s=min(s,voxs.vox[i]);
@@ -81,7 +83,7 @@ float getSmallest(struct Voxels voxs){
 	return s;
 }
 
-float interpolate(struct Voxels voxs,vec3 pos){
+float interpolate(Voxels voxs,vec3 pos){
 	pos-=floor(pos);
 	float a1=mix(voxs.vox[0],voxs.vox[1],pos.x);
 	float a2=mix(voxs.vox[2],voxs.vox[3],pos.x);
@@ -94,7 +96,7 @@ float interpolate(struct Voxels voxs,vec3 pos){
 
 float world(vec3 ray){
 	ivec3 pos=ivec3(floor(ray));
-	struct Voxels voxs=getVoxels(pos);
+	Voxels voxs=getVoxels(pos);
 	float s=getSmallest(voxs);
 	if(s<0.1){
 		s=interpolate(voxs,ray);
@@ -103,13 +105,13 @@ float world(vec3 ray){
 }
 
 void main(){
-	vec3 up=cross(fwd,right);
+	vec3 up=cross(ubo.fwd,ubo.right);
 
-	vec2 p=(-resolution.xy+2.0*gl_FragCoord.xy)/resolution.y;
-	vec3 rd=normalize(p.x*right+p.y*up+fov*fwd);
+	vec2 p=(-ubo.resolution.xy+2.0*gl_FragCoord.xy)/ubo.resolution.y;
+	vec3 rd=normalize(p.x*ubo.right+p.y*up+ubo.fov*ubo.fwd);
 
-	float dst=0;
-	vec3 ray=pos;
+	float dst=1;
+	vec3 ray=ubo.pos+rd;
 	for(int i=0;i<500;i++){
 		if(ray.x>=ChunkSize){
 			chunkID=chunks[chunkID].neighbors[0];
@@ -143,6 +145,10 @@ void main(){
 			break;
 	}
 	vec3 col = vec3(0.5-(dst/200));
+	// if(dst<2){
+	// 	col-=vec3(1,0,1);
+	// 	col+=dst*vec3(0.5,0,0.5);
+	// }
 	col+=vec3(float(chunks[chunkID].id)/1000)/(1-vec3(0.8,0.3,0.7));
 	// if(p.x<0){
 	// 	col=vec3(chunks[chunkID].neighbors[0],chunks[chunkID].neighbors[1],chunks[chunkID].neighbors[2]);

@@ -61,11 +61,11 @@ worldInit::proc(){
 			}
 			return 6
 		}
-		dir:u32=1
+		dir:u32=4
 		chunk:u32
 		pos:[3]i32
 		for _ in 0..<50{
-			fmt.println("GenChunk",Neighbors[dir],"from",chunk,pos)
+			// fmt.println("GenChunk",Neighbors[dir],"from",chunk,pos)
 			chunk=genNeighbor(chunk,dir)
 			// fmt.println(pos,dir)
 			pos+=Neighbors[dir]
@@ -75,15 +75,15 @@ worldInit::proc(){
 				j:=u32(j)
 				n,ok:=world.chunks[chunk].neighbors[j].?
 				if !ok{
-					fmt.println("----------------")
-					fmt.println("Find ",Neighbors[j]," from ",chunk)
+					// fmt.println("----------------")
+					// fmt.println("Find ",Neighbors[j]," from ",chunk)
 					n,ok=findNeighbor(chunk,j).?
 					if ok{
 						world.chunks[chunk].neighbors[j]=n
 						world.chunks[n].neighbors[i32(j)-((i32(j)%2)*2-1)]=chunk
 					}
 					// fmt.println("----------------")
-					fmt.println(j,ok,next(dir),n)
+					// fmt.println(j,ok,next(dir),n)
 				}
 				if(ok && j==next(dir))do neighbor=true
 			}
@@ -92,10 +92,10 @@ worldInit::proc(){
 				dir=next(dir)
 			}
 		}
-		fmt.println("pos:",pos)
+		// fmt.println("pos:",pos)
 	}
 	ind:u32
-	for c in &world.chunks{
+	for &c in world.chunks{
 		ground:=true
 		for child in c.children{
 			if child!=nil do ground=false
@@ -120,6 +120,8 @@ worldInit::proc(){
 					yy:=f32(c.pos.y*ChunkSize+i32(y))
 					zz:=f32(c.pos.z*ChunkSize+i32(z))
 					dst:=yy-(la.sin(xx/20)+la.sin(zz/10)+5)
+					dst=la.min(dst,la.length([3]f32{xx,yy,zz}-8)-2)
+					// dst=la.length([3]f32{xx,yy,zz}-8)-2
 					data[x+y*ChunkSize+z*ChunkSize*ChunkSize]=dst
 				}
 			}
@@ -128,7 +130,7 @@ worldInit::proc(){
 		chunk:=chunkType{
 			vox=u32(len(world.voxelData)-1),
 		}
-		for n,i in &chunk.neighbors{
+		for &n,i in chunk.neighbors{
 			n=none
 			other,ok:=c.neighbors[i].?
 			if !ok do continue
@@ -141,26 +143,129 @@ worldInit::proc(){
 	}
 }
 
+Voxels::struct{
+	neighbors:[8]f32,
+	corners:[8]f32,
+}
+
+getVoxel::proc(pos:[3]i32,c:u32)->f32{
+	pos:=pos
+	c:=c
+	if(pos.x>=ChunkSize){
+		c=world.chunkData[c].neighbors[0];
+		if(c==none)do return 0;
+		pos.x-=ChunkSize;
+	}else if(pos.x<0){
+		c=world.chunkData[c].neighbors[1];
+		if(c==none)do return 0;
+		pos.x+=ChunkSize;
+	}if(pos.y>=ChunkSize){
+		c=world.chunkData[c].neighbors[2];
+		if(c==none)do return 0;
+		pos.y-=ChunkSize;
+	}else if(pos.y<0){
+		c=world.chunkData[c].neighbors[3];
+		if(c==none)do return 0;
+		pos.y+=ChunkSize;
+	}if(pos.z>=ChunkSize){
+		c=world.chunkData[c].neighbors[4];
+		if(c==none)do return 0;
+		pos.z-=ChunkSize;
+	}else if(pos.z<0){
+		c=world.chunkData[c].neighbors[5];
+		if(c==none)do return 0;
+		pos.z+=ChunkSize;
+	}
+	a:=world.chunkData[c].vox
+	b:=&world.voxelData[a]
+	d:=pos.x+pos.y*ChunkSize+pos.z*ChunkSize*ChunkSize
+	return b[pos.x+pos.y*ChunkSize+pos.z*ChunkSize*ChunkSize]
+	// if d>=0 && d<ChunkSize*ChunkSize*ChunkSize{
+	// }
+	// return 0
+}
+
+// getVoxels::proc(pos:[3]i32,dir:[3]i32,c:u32)->(voxs:Voxels){
+// 	for i in 0..<8{
+// 		voxs.corners[i]=getVoxel(pos+Corners[i]*dir,c);
+// 	}
+// 	for i in 0..<6{
+// 		voxs.neighbors[i]=getVoxel(pos+(Neighbors[i]*2-1),c);
+// 	}
+// 	return;
+// }
+
+getVoxels::proc(pos:[3]i32,c:u32)->(voxs:Voxels){
+	for i in 0..<8{
+		voxs.corners[i]=getVoxel(pos+(Corners[i]*2-1),c);
+	}
+	for i in 0..<6{
+		voxs.neighbors[i]=getVoxel(pos+Neighbors[i],c);
+	}
+	return;
+}
+
 worldUpdate::proc(){
-	for c in &world.chunks{
-		ground:=true
-		for child in c.children{
-			if child!=nil do ground=false
+	when true{
+		for c in &world.chunks{
+			ground:=true
+			for child in c.children{
+				if child!=nil do ground=false
+			}
+			if !ground do continue
+			v:=&world.voxelData[world.chunkData[c.chunk.?].vox]
+		// for v,i in &world.voxelData{
+		// 	cz:=i%zSize
+		// 	cy:=(i/zSize)%ySize
+		// 	cx:=(i/(zSize*ySize))%xSize
+			for x in 0..<ChunkSize{
+				for y in 0..<ChunkSize{
+					for z in 0..<ChunkSize{
+						xx:=f32(c.pos.x*ChunkSize+i32(x))
+						yy:=f32(c.pos.y*ChunkSize+i32(y))
+						zz:=f32(c.pos.z*ChunkSize+i32(z))
+						dst:=yy-(la.sin(xx/20+runTime)+la.sin(zz/10)+5)
+						dst=la.min(dst,la.length([3]f32{xx,yy,zz}-8)-2)
+						v[x+y*ChunkSize+z*ChunkSize*ChunkSize]=dst
+					}
+				}
+			}
 		}
-		if !ground do continue
-		v:=&world.voxelData[world.chunkData[c.chunk.?].vox]
-	// for v,i in &world.voxelData{
-	// 	cz:=i%zSize
-	// 	cy:=(i/zSize)%ySize
-	// 	cx:=(i/(zSize*ySize))%xSize
-		for x in 0..<ChunkSize{
-			for y in 0..<ChunkSize{
-				for z in 0..<ChunkSize{
-					xx:=f32(c.pos.x*ChunkSize+i32(x))
-					yy:=f32(c.pos.y*ChunkSize+i32(y))
-					zz:=f32(c.pos.z*ChunkSize+i32(z))
-					dst:=yy-(la.sin(xx/20+runTime)+la.sin(zz/10)+5)
-					v[x+y*ChunkSize+z*ChunkSize*ChunkSize]=dst
+	}else{
+		if la.mod(runTime,5)<0.1{
+			for c in &world.chunks{
+				ground:=true
+				for child in c.children{
+					if child!=nil do ground=false
+				}
+				if !ground do continue
+				v:=&world.voxelData[world.chunkData[c.chunk.?].vox]
+				for x in 0..<ChunkSize{
+					for y in 0..<ChunkSize{
+						for z in 0..<ChunkSize{
+							// dir:=([3]i32)({0,0,0})
+							// smallest:f32=100
+							// for vec in Corners{
+							// 	vec:=vec*2-1
+							// 	vox:=la.abs(getVoxel(([3]i32)({i32(x),i32(y),i32(z)})+vec,c.chunk.?))
+							// 	if vox<smallest{
+							// 		dir=vec
+							// 		smallest=vox
+							// 	}
+							// }
+							dst:f32=v[x+y*ChunkSize+z*ChunkSize*ChunkSize]
+							if dst>0.1 do dst=100
+							voxs:=getVoxels(([3]i32)({i32(x),i32(y),i32(z)}),c.chunk.?)
+							// dst:f32=100
+							for val in voxs.neighbors{
+								dst=la.min(dst,val+1)
+							}
+							// for val in voxs.corners{
+							// 	dst=la.min(dst,val+1.732050808)
+							// }
+							v[x+y*ChunkSize+z*ChunkSize*ChunkSize]=dst
+						}
+					}
 				}
 			}
 		}
@@ -210,10 +315,10 @@ findNeighbor::proc(chunk:u32,dir:u32)->Maybe(u32){
 		pvec=Corners[c[1]]
 		pos=(pos+{f32(pvec[0]),f32(pvec[1]),f32(pvec[2])})/2
 		height+=1
-		fmt.println("pvec:",pvec,c[0])
+		// fmt.println("pvec:",pvec,c[0])
 		if pvec[dir/2]==i32(dir%2) do break
 	}
-	fmt.println("pos:",pos)
+	// fmt.println("pos:",pos)
 	pos[dir/2]+=(1/math.pow(2,f32(height)))*-(f32(dir%2)*2-1)
 	// step:=(1/math.pow(2,f32(height)))
 	// sign:=-(f32(dir%2)*2-1)
@@ -228,7 +333,7 @@ findNeighbor::proc(chunk:u32,dir:u32)->Maybe(u32){
 		if(!ok){return nil}
 		height-=1
 		// fmt.println("pos:",pos)
-		fmt.println("pvec:",pvec,c[0])
+		// fmt.println("pvec:",pvec,c[0])
 	}
 	return c[0]
 }
@@ -255,10 +360,10 @@ genNeighbor::proc(chunk:u32,dir:u32)->u32{
 		pos=(pos+{f32(pvec[0]),f32(pvec[1]),f32(pvec[2])})/2
 		height+=1
 		// fmt.println("pos:",pos)
-		fmt.println("pvec:",pvec,c[0])
+		// fmt.println("pvec:",pvec,c[0])
 		if pvec[dir/2]==i32(dir%2) do break
 	}
-	fmt.println("pos:",pos)
+	// fmt.println("pos:",pos)
 	pos[dir/2]+=(1/math.pow(2,f32(height)))*-(f32(dir%2)*2-1)
 	// fmt.println("pos:",pos)
 	// step:=(1/math.pow(2,f32(height)))
@@ -280,7 +385,7 @@ genNeighbor::proc(chunk:u32,dir:u32)->u32{
 		}
 		height-=1
 		// fmt.println("pos:",pos)
-		fmt.println("pvec:",pvec,c[0])
+		// fmt.println("pvec:",pvec,c[0])
 	}
 	return c[0]
 }

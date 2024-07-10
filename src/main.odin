@@ -30,17 +30,15 @@ main::proc(){
 		return leaks
 	}
 
-	runningScreen=gameUpdate
+	// runningScreen=gameUpdate
 
-	worldInit()
-	if !renderInit(800,450,"game"){
-		return
-	}
-	gameInit()
-	for(!quit){
-		renderUpdate()
-	}
-	worldDestroy()
+	// worldInit()
+	if !renderInit(800,450,"game") do return
+	// gameInit()
+	// for(!quit){
+	// 	renderUpdate()
+	// }
+	// worldDestroy()
 	renderDestroy()
 
 	// if(!reset_tracking_allocator(&temp_tracking_allocator)){fmt.println("No Temp Leaks!")}
