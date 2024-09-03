@@ -1,7 +1,6 @@
-#version 430
+#version 450
 
-layout(location = 0) in vec2 fragTexCoord;
-// in vec4 fragColor;
+layout(location = 0) in vec2 fragCoord;
 layout(location = 0) out vec4 finalColor;
 
 layout(binding = 0) uniform UniformBufferObject {
@@ -18,7 +17,7 @@ uint chunkID=0;
 
 const uint ChunkSize=16;
 
-layout (std430, binding=0) buffer voxelData{
+layout (std430, binding=1) readonly buffer voxelData{
 	float[][ChunkSize*ChunkSize*ChunkSize] voxels;
 };
 
@@ -28,8 +27,8 @@ struct chunk{
 	uint id;
 };
 
-layout (std430, binding=1) buffer chunkData{
-	chunk[2] chunks;
+layout (std430, binding=2) readonly buffer chunkData{
+	chunk[] chunks;
 };
 
 struct Voxels{
@@ -96,6 +95,9 @@ float interpolate(Voxels voxs,vec3 pos){
 
 float world(vec3 ray){
 	ivec3 pos=ivec3(floor(ray));
+	if(pos==ivec3(8,8,16)){
+		return -2;
+	}
 	Voxels voxs=getVoxels(pos);
 	float s=getSmallest(voxs);
 	if(s<0.1){
@@ -106,39 +108,53 @@ float world(vec3 ray){
 
 void main(){
 	vec3 up=cross(ubo.fwd,ubo.right);
+	// float t=(sin(ubo.runTime)+1)/2;
 
-	vec2 p=(-ubo.resolution.xy+2.0*gl_FragCoord.xy)/ubo.resolution.y;
+	// vec2 p=(-ubo.resolution.xy+2.0*gl_FragCoord.xy)/ubo.resolution.y;
+	vec2 p=fragCoord;
+	if(ubo.resolution.x>ubo.resolution.y)
+		p.x*=ubo.resolution.x/ubo.resolution.y;
+	else
+		p.y*=ubo.resolution.y/ubo.resolution.x;
 	vec3 rd=normalize(p.x*ubo.right+p.y*up+ubo.fov*ubo.fwd);
 
 	float dst=1;
 	vec3 ray=ubo.pos+rd;
+	// ray.y+=t;
 	for(int i=0;i<500;i++){
 		if(ray.x>=ChunkSize){
 			chunkID=chunks[chunkID].neighbors[0];
 			ray.x-=ChunkSize;
 			if(chunkID==-1)break;
+			// break;
 		}else if(ray.x<0){
 			chunkID=chunks[chunkID].neighbors[1];
 			ray.x+=ChunkSize;
 			if(chunkID==-1)break;
+			// break;
 		}if(ray.y>=ChunkSize){
 			chunkID=chunks[chunkID].neighbors[2];
 			ray.y-=ChunkSize;
 			if(chunkID==-1)break;
+			// break;
 		}else if(ray.y<0){
 			chunkID=chunks[chunkID].neighbors[3];
 			ray.y+=ChunkSize;
 			if(chunkID==-1)break;
+			// break;
 		}if(ray.z>=ChunkSize){
 			chunkID=chunks[chunkID].neighbors[4];
 			ray.z-=ChunkSize;
 			if(chunkID==-1)break;
+			// break;
 		}else if(ray.z<0){
 			chunkID=chunks[chunkID].neighbors[5];
 			ray.z+=ChunkSize;
 			if(chunkID==-1)break;
+			// break;
 		}
 		float geom=world(ray);
+		// float geom=.1;
 		dst+=geom;
 		ray+=rd*geom;
 		if(geom<0.01)
@@ -155,6 +171,11 @@ void main(){
 	// 	if(chunkID==-1)col=vec3(1,0,0);
 	// }
 
-	finalColor = vec4(col, 1.0 );
+	// finalColor = vec4(p,(sin(ubo.runTime)+1)/2, 1.0 );
+	finalColor = vec4(world(ray)+.1,dst/200,0,1);
+	// if(p.x>1 || p.x<-1 || p.y>1 || p.y<-1){
+	// 	finalColor=vec4(0,0,0,0);
+	// }
+	finalColor=vec4(col,0);
 }
 

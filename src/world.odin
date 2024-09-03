@@ -65,9 +65,9 @@ worldInit::proc(){
 		chunk:u32
 		pos:[3]i32
 		for _ in 0..<50{
-			// fmt.println("GenChunk",Neighbors[dir],"from",chunk,pos)
+			// println("GenChunk",Neighbors[dir],"from",chunk,pos)
 			chunk=genNeighbor(chunk,dir)
-			// fmt.println(pos,dir)
+			// println(pos,dir)
 			pos+=Neighbors[dir]
 			world.chunks[chunk].pos=pos
 			neighbor:bool
@@ -75,24 +75,24 @@ worldInit::proc(){
 				j:=u32(j)
 				n,ok:=world.chunks[chunk].neighbors[j].?
 				if !ok{
-					// fmt.println("----------------")
-					// fmt.println("Find ",Neighbors[j]," from ",chunk)
+					// println("----------------")
+					// println("Find ",Neighbors[j]," from ",chunk)
 					n,ok=findNeighbor(chunk,j).?
 					if ok{
 						world.chunks[chunk].neighbors[j]=n
 						world.chunks[n].neighbors[i32(j)-((i32(j)%2)*2-1)]=chunk
 					}
-					// fmt.println("----------------")
-					// fmt.println(j,ok,next(dir),n)
+					// println("----------------")
+					// println(j,ok,next(dir),n)
 				}
 				if(ok && j==next(dir))do neighbor=true
 			}
-			// fmt.println(neighbor,dir)
+			// println(neighbor,dir)
 			if !neighbor{
 				dir=next(dir)
 			}
 		}
-		// fmt.println("pos:",pos)
+		// println("pos:",pos)
 	}
 	ind:u32
 	for &c in world.chunks{
@@ -104,14 +104,14 @@ worldInit::proc(){
 		c.chunk=ind
 		ind+=1
 	}
-	// fmt.println(ind)
+	// println(ind)
 	for c,ind in &world.chunks{
 		ground:=true
 		for child in c.children{
 			if child!=nil do ground=false
 		}
 		if !ground do continue
-		// fmt.println(c)
+		// println(c)
 		data:voxelType
 		for x in 0..<ChunkSize{
 			for y in 0..<ChunkSize{
@@ -293,8 +293,8 @@ worldUpdate::proc(){
 	ChunkID=0
 	
 	// ChunksPos=world.chunks[world.chunkData[0].id].pos
-	// fmt.println("ChunksPos:",ChunksPos)
-	// fmt.println("ChunkPos:",ChunkPos)
+	// println("ChunksPos:",ChunksPos)
+	// println("ChunkPos:",ChunkPos)
 }
 
 worldDestroy::proc(){
@@ -315,15 +315,15 @@ findNeighbor::proc(chunk:u32,dir:u32)->Maybe(u32){
 		pvec=Corners[c[1]]
 		pos=(pos+{f32(pvec[0]),f32(pvec[1]),f32(pvec[2])})/2
 		height+=1
-		// fmt.println("pvec:",pvec,c[0])
+		// println("pvec:",pvec,c[0])
 		if pvec[dir/2]==i32(dir%2) do break
 	}
-	// fmt.println("pos:",pos)
+	// println("pos:",pos)
 	pos[dir/2]+=(1/math.pow(2,f32(height)))*-(f32(dir%2)*2-1)
 	// step:=(1/math.pow(2,f32(height)))
 	// sign:=-(f32(dir%2)*2-1)
 	// pos[dir/2]+=step*sign
-	// fmt.println("pos:",pos,step,sign)
+	// println("pos:",pos,step,sign)
 	for height>0{
 		pos*=2
 		pvec={i32(pos[0]),i32(pos[1]),i32(pos[2])}
@@ -332,8 +332,8 @@ findNeighbor::proc(chunk:u32,dir:u32)->Maybe(u32){
 		c[0],ok=world.chunks[c[0]].children[c[1]].?
 		if(!ok){return nil}
 		height-=1
-		// fmt.println("pos:",pos)
-		// fmt.println("pvec:",pvec,c[0])
+		// println("pos:",pos)
+		// println("pvec:",pvec,c[0])
 	}
 	return c[0]
 }
@@ -359,17 +359,17 @@ genNeighbor::proc(chunk:u32,dir:u32)->u32{
 		pvec=Corners[c[1]]
 		pos=(pos+{f32(pvec[0]),f32(pvec[1]),f32(pvec[2])})/2
 		height+=1
-		// fmt.println("pos:",pos)
-		// fmt.println("pvec:",pvec,c[0])
+		// println("pos:",pos)
+		// println("pvec:",pvec,c[0])
 		if pvec[dir/2]==i32(dir%2) do break
 	}
-	// fmt.println("pos:",pos)
+	// println("pos:",pos)
 	pos[dir/2]+=(1/math.pow(2,f32(height)))*-(f32(dir%2)*2-1)
-	// fmt.println("pos:",pos)
+	// println("pos:",pos)
 	// step:=(1/math.pow(2,f32(height)))
 	// sign:=-(f32(dir%2)*2-1)
 	// pos[dir/2]+=step*sign
-	// fmt.println("pos:",pos,step,sign)
+	// println("pos:",pos,step,sign)
 	for height>0{
 		pos*=2
 		pvec={i32(pos[0]),i32(pos[1]),i32(pos[2])}
@@ -381,11 +381,11 @@ genNeighbor::proc(chunk:u32,dir:u32)->u32{
 			append(&world.chunks,chunksType{parent=[2]u32{temp,c[1]}})
 			c[0]=u32(len(world.chunks)-1)
 			world.chunks[temp].children[c[1]]=c[0]
-			// fmt.println("GenDown:",temp)
+			// println("GenDown:",temp)
 		}
 		height-=1
-		// fmt.println("pos:",pos)
-		// fmt.println("pvec:",pvec,c[0])
+		// println("pos:",pos)
+		// println("pvec:",pvec,c[0])
 	}
 	return c[0]
 }

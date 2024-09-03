@@ -1,2 +1,5 @@
-voxeltracing
+build/debug
+build/main
+build/spv/*
+!build/spv/.gitkeep
 

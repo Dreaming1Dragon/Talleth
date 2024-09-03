@@ -5,10 +5,10 @@ DEBUG=$(BDIR)/debug
 SHADERDIR=shaders
 SPVDIR=build/spv
 
-OBJECTS = $(shell find $(SDIR) -name *.odin)
+# OBJECTS = $(shell find $(SDIR) -name *.odin)
 SHADERS = $(patsubst $(SHADERDIR)/%, $(SPVDIR)/%.spv, $(wildcard $(SHADERDIR)/*))
 
-.PHONY: default all run debug clean
+.PHONY: default all run debug clean force
 
 .PRECIOUS: $(TARGET)
 
@@ -18,13 +18,13 @@ all: default
 $(SPVDIR)/%.spv: $(SHADERDIR)/%
 	glslc $< -o $@
 
-$(TARGET): $(OBJECTS) $(SHADERS)
+$(TARGET): $(SHADERS) force
 	odin build $(SDIR) -out:$@
 
-$(DEBUG): $(OBJECTS)
+$(DEBUG): $(SHADERS) force
 	odin build $(SDIR) -out:$@ -debug
 
-run: $(TARGET)
+run: $(DEBUG)
 	./$<
 
 debug: $(DEBUG)
@@ -32,4 +32,6 @@ debug: $(DEBUG)
 
 clean:
 	-rm -f $(TARGET) $(DEBUG) $(SPVDIR)/*
+
+force:
 
