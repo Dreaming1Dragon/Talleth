@@ -25,11 +25,19 @@ struct chunk{
 	uint[6] neighbors;
 	uint vox;
 	uint id;
+	uint set;
+	uint index;
 };
 
-layout (std430, binding=2) readonly buffer chunkData{
+layout (std430, binding=2) buffer chunkData{
+	int lock;
+	int indices;
 	chunk[] chunks;
 };
+
+// layout(std430,binding=3) buffer nextData{
+// 	uint[] index;
+// }
 
 struct Voxels{
 	float[8] vox;
@@ -106,6 +114,59 @@ float world(vec3 ray){
 	return s;
 }
 
+// 0 0 0 0
+// 1 2 3 4
+// ^
+// oldID=1
+// 1 0 0 0
+// 1 2 3 4
+//   ^
+// oldID=4
+// 1 4 0 0
+// 1 4 3 2
+//     ^
+// oldID=2
+// 1 4 4 0
+// 1 4 2 3
+//       ^
+// oldID=3
+// 1 4 4 4
+// 1 4 2 3
+
+void updateChunks(uint oldID){
+	// uint set=atomicCompSwap(chunks[oldID].set,0,indices);
+	// if(set==0){
+	// 	uint val=chunks[indices].set;
+	// 	// if val!=0{}
+	// 	atomicExchange(chunks[indices].index,oldID);
+	// 	// atomicExchange(chunks[oldID].index,oldInd);
+	// 	atomicAdd(indices,1);
+	// }
+	uint set=atomicExchange(chunks[oldID].set,1);
+	// uint set=atomicCompSwap(chunks[oldID].set,0,indices+1);
+	if(set==0){
+		uint other=oldID+1;
+		uint prev;
+		do{
+			prev=other;
+			other=chunks[other-1].index;
+			// other=atomicCompSwap(chunks[other-1].index,0,oldID+1);
+		}while(other!=0);
+		atomicExchange(chunks[indices].index,prev);
+		// uint val=oldID;
+		// uint ind=indices;
+		// do{
+		// 	uint tmp=chunks[ind].set;
+		// 	if(tmp!=0){
+		// 		val=tmp-1;
+		// 	}else val=tmp;
+		// }while(tmp!=0);
+		// atomicExchange(chunks[indices].index,val);
+		// atomicExchange(chunks[oldID].index,oldInd);
+		atomicAdd(indices,1);
+	}
+}
+
 void main(){
 	vec3 up=cross(ubo.fwd,ubo.right);
 	// float t=(sin(ubo.runTime)+1)/2;
@@ -121,7 +182,9 @@ void main(){
 	float dst=1;
 	vec3 ray=ubo.pos+rd;
 	// ray.y+=t;
+	uint oldID=chunkID;
 	for(int i=0;i<500;i++){
+		oldID=chunkID;
 		if(ray.x>=ChunkSize){
 			chunkID=chunks[chunkID].neighbors[0];
 			ray.x-=ChunkSize;
@@ -153,19 +216,33 @@ void main(){
 			if(chunkID==-1)break;
 			// break;
 		}
+		if(oldID!=chunkID){
+			updateChunks(oldID);
+		}
 		float geom=world(ray);
 		// float geom=.1;
 		dst+=geom;
 		ray+=rd*geom;
-		if(geom<0.01)
+		if(geom<0.01 || dst>100)
 			break;
 	}
+	updateChunks(oldID);
+	// {
+	// 	int set=atomicExchange(chunks[oldID].set,1);
+	// 	if(set==0){
+	// 		atomicExchange(chunks[indices].index,chunks[oldID].id);
+	// 		// atomicExchange(chunks[oldID].index,oldInd);
+	// 		atomicAdd(indices,1);
+	// 	}
+	// }
 	vec3 col = vec3(0.5-(dst/200));
 	// if(dst<2){
 	// 	col-=vec3(1,0,1);
 	// 	col+=dst*vec3(0.5,0,0.5);
 	// }
-	col+=vec3(float(chunks[chunkID].id)/1000)/(1-vec3(0.8,0.3,0.7));
+	// if(chunkID!=-1)
+		col+=vec3(float(chunks[oldID].id)/1000)/(1-vec3(0.8,0.3,0.7));
+		// col+=vec3(float(oldID)/1000)/(1-vec3(0.8,0.3,0.7));
 	// if(p.x<0){
 	// 	col=vec3(chunks[chunkID].neighbors[0],chunks[chunkID].neighbors[1],chunks[chunkID].neighbors[2]);
 	// 	if(chunkID==-1)col=vec3(1,0,0);

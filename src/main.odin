@@ -2,7 +2,7 @@ package main
 
 import "core:fmt"
 println::fmt.println
-import "core:log"
+// import "core:log"
 import "core:mem"
 
 runningScreen:proc()

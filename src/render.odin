@@ -53,6 +53,8 @@ Uniforms:struct{
 	resolution:[2]f32,
 }
 
+indices:[]u32
+
 renderInit::proc(width,height:i32,name:cstring)->(ok:bool=true){
 	fl.InitWindow(width,height,name) or_return
 	defer if !ok do fl.DestroyWindow()
@@ -62,10 +64,15 @@ renderInit::proc(width,height:i32,name:cstring)->(ok:bool=true){
 	defer if !ok do fl.DestroyBuffers(pipeline)
 	fl.MakeSSBO(&pipeline,size_of(voxelType)*len(world.voxelData),1)
 	// defer if !ok do fl.DestroySSBO(pipeline)
-	fl.MakeSSBO(&pipeline,size_of(chunkType)*len(world.chunkData),2)
+	fl.MakeSSBO(&pipeline,size_of(u32)*2+size_of(chunkType)*len(world.chunkData),2)
 	// defer if !ok do fl.DestroySSBO(pipeline)
 	fl.MakeScreenPipeline(&pipeline,string(#load("../build/spv/march.frag.spv"))) or_return
 	defer if !ok do fl.DestroyShader(pipeline)
+	indices=make([]u32,len(world.chunkData))
+	defer if !ok do delete(indices)
+	for &ind in indices{
+		ind=0
+	}
 
 	// Loc=fl.CreateUBO(size_of(Uniforms)) or_return
 	// shader=fl.LoadShader("../../shaders/simple.vs","../../shaders/march.fs") or_return
@@ -105,9 +112,15 @@ renderUpdate::proc(){
 		
 		Uniforms.runTime=runTime
 		Uniforms.resolution=fl.resolution
+		zeros:[2]i32;
+		ind:i32
+		for &ind in indices do ind=0
+		fl.GetFromBuffer(&pipeline,2,rawptr(&ind),size_of(i32),size_of(i32))
+		fl.GetVecFromBuffer(&pipeline,2,rawptr(&indices[0]),len(world.chunkData),size_of(chunkType),size_of(zeros)+size_of(u32)*9,size_of(u32))
 		fl.UpdateBuffer(&pipeline,0,rawptr(&Uniforms),size_of(Uniforms))
 		fl.UpdateBuffer(&pipeline,1,rawptr(&world.voxelData[0]),size_of(voxelType)*len(world.voxelData))
-		fl.UpdateBuffer(&pipeline,2,rawptr(&world.chunkData[0]),size_of(chunkType)*len(world.chunkData))
+		fl.UpdateBuffer(&pipeline,2,rawptr(&zeros[0]),size_of(zeros))
+		fl.UpdateBuffer(&pipeline,2,rawptr(&world.chunkData[0]),size_of(chunkType)*len(world.chunkData),size_of(zeros))
 		
 		// fl.ScreenShader(shader)
 		fl.BeginShaderMode(&pipeline)
@@ -115,14 +128,18 @@ renderUpdate::proc(){
 	fl.EndDrawing()
 	free_all(context.temp_allocator)
 	quit|=fl.quit
+	// if int(runTime*100)%100==0{
+	// 	println(ind,indices,world.chunkData[1].id,none)
+	// }
 }
 
 renderDestroy::proc(){
 	// fl.rlUnloadShaderBuffer(voxels)
 	// fl.UnloadShader(shader)
 	// fl.DestroyUBO(Loc)
+	delete(indices)
 	fl.DestroyBuffers(pipeline)
 	fl.DestroyShader(pipeline)
-	fl.DestroyWindow()	
+	fl.DestroyWindow()
 }
 

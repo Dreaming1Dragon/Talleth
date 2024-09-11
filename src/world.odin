@@ -7,7 +7,9 @@ import math "core:math"
 chunkType::struct{
 	neighbors:[6]u32,
 	vox:u32,
-	id:u32
+	id:u32,
+	set:u32,
+	index:u32,
 }
 voxelType::[ChunkSize*ChunkSize*ChunkSize]f32
 chunksType::struct{
@@ -138,8 +140,10 @@ worldInit::proc(){
 			// assert(ok)
 			// if !ok do n=none
 		}
+		chunk.id=u32(ind)
+		// println(ind)
 		append(&world.chunkData,chunk)
-		last(world.chunkData).id=u32(ind)
+		// last(world.chunkData).id=u32(ind)
 	}
 }
 
@@ -271,26 +275,36 @@ worldUpdate::proc(){
 		}
 	}
 	
-	c:=world.chunkData[ChunkID]
-	world.chunkData[ChunkID]=world.chunkData[0]
-	for i in 0..<6{
-		n:=world.chunkData[ChunkID].neighbors[i]
-		if(n!=none && n!=ChunkID){
-			world.chunkData[n].neighbors[i+((i%2==0)?1:-1)]=ChunkID
-		}else if(n==ChunkID){
-			c.neighbors[i+((i%2==0)?1:-1)]=ChunkID
+	swapChunk::proc(c1,c2:u32){
+		if ChunkID==c1 do ChunkID=c2
+		else if ChunkID==c2 do ChunkID=c1
+		c:=world.chunkData[c1]
+		world.chunkData[c1]=world.chunkData[c2]
+		for i in 0..<6{
+			n:=world.chunkData[c1].neighbors[i]
+			if(n!=none && n!=c1){
+				world.chunkData[n].neighbors[i+((i%2==0)?1:-1)]=c1
+			}else if(n==c1){
+				c.neighbors[i+((i%2==0)?1:-1)]=c1
+			}
 		}
-	}
-	world.chunkData[0]=c
-	for i in 0..<6{
-		n:=world.chunkData[0].neighbors[i]
-		if(n!=none){
-			world.chunkData[n].neighbors[i+((i%2==0)?1:-1)]=0
+		world.chunkData[c2]=c
+		for i in 0..<6{
+			n:=world.chunkData[c2].neighbors[i]
+			if(n!=none){
+				world.chunkData[n].neighbors[i+((i%2==0)?1:-1)]=c2
+			}
 		}
+		world.chunks[world.chunkData[c2].id].chunk=c2
+		world.chunks[world.chunkData[c1].id].chunk=c1
 	}
-	world.chunks[world.chunkData[0].id].chunk=0
-	world.chunks[world.chunkData[ChunkID].id].chunk=ChunkID
-	ChunkID=0
+	for val,ind in indices{
+		if val!=0 do swapChunk(val-1,u32(ind))
+	}
+	if ChunkID!=0{
+		swapChunk(ChunkID,0)
+		// ChunkID=0
+	}
 	
 	// ChunksPos=world.chunks[world.chunkData[0].id].pos
 	// println("ChunksPos:",ChunksPos)
